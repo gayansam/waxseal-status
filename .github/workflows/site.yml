@@ -8,8 +8,11 @@ on:
 jobs:
   site:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pages: write
     steps:
       - uses: actions/checkout@v4
       - uses: upptime/status-page@v1.4.0
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          GH_PAT: ${{ secrets.GITHUB_TOKEN }}

@@ -7,8 +7,10 @@ on:
 jobs:
   graphs:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - uses: upptime/graphs@v1.1.0
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          GH_PAT: ${{ secrets.GITHUB_TOKEN }}

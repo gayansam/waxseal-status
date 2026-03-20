@@ -11,6 +11,6 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
-      - uses: upptime/graphs@v1.1.0
+      - uses: upptime/graphs@v1.2.18
         env:
           GH_PAT: ${{ secrets.GITHUB_TOKEN }}

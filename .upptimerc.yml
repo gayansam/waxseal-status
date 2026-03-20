@@ -30,6 +30,7 @@ sites:
 
 status-website:
   cname: status.waxseal.app
+  baseUrl: /
   logoUrl: https://waxseal.app/logo.svg
   name: Waxseal Status
   theme: light

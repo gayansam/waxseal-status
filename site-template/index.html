@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Waxseal Status</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f9fafb; color: #111827; }
+    .container { max-width: 800px; margin: 0 auto; padding: 0 16px; }
+    header { background: #fff; border-bottom: 1px solid #e5e7eb; padding: 16px 0; }
+    header .container { display: flex; align-items: center; justify-content: space-between; }
+    header .logo { display: flex; align-items: center; gap: 8px; text-decoration: none; color: #111827; font-weight: 700; font-size: 18px; }
+    header .logo img { width: 32px; height: 32px; }
+    header nav a { color: #6b7280; text-decoration: none; margin-left: 16px; font-size: 14px; }
+    header nav a:hover { color: #111827; }
+    main { padding: 32px 0; }
+    h1 { font-size: 24px; margin-bottom: 8px; }
+    .subtitle { color: #6b7280; margin-bottom: 24px; }
+    .overall { padding: 16px 20px; border-radius: 8px; margin-bottom: 24px; font-weight: 600; font-size: 18px; display: flex; align-items: center; gap: 10px; }
+    .overall.up { background: #ecfdf5; color: #065f46; }
+    .overall.down { background: #fef2f2; color: #991b1b; }
+    .overall.degraded { background: #fffbeb; color: #92400e; }
+    .overall .dot { width: 12px; height: 12px; border-radius: 50%; }
+    .overall.up .dot { background: #10b981; }
+    .overall.down .dot { background: #ef4444; }
+    .overall.degraded .dot { background: #f59e0b; }
+    .services { display: flex; flex-direction: column; gap: 12px; }
+    .service { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; }
+    .service .name { font-weight: 600; }
+    .service .meta { color: #6b7280; font-size: 14px; margin-top: 2px; }
+    .badge { padding: 4px 12px; border-radius: 999px; font-size: 13px; font-weight: 600; }
+    .badge.up { background: #ecfdf5; color: #065f46; }
+    .badge.down { background: #fef2f2; color: #991b1b; }
+    .badge.degraded { background: #fffbeb; color: #92400e; }
+    .loading { text-align: center; color: #9ca3af; padding: 40px 0; }
+    footer { border-top: 1px solid #e5e7eb; padding: 24px 0; text-align: center; color: #9ca3af; font-size: 13px; }
+    footer a { color: #6b7280; }
+    .updated { color: #9ca3af; font-size: 13px; margin-top: 24px; text-align: center; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="https://status.waxseal.app" class="logo">
+        <img src="https://waxseal.app/logo.svg" alt="">
+        Waxseal Status
+      </a>
+      <nav>
+        <a href="https://waxseal.app">Homepage</a>
+        <a href="https://waxseal.app/en/portal/help">Help</a>
+      </nav>
+    </div>
+  </header>
+  <main>
+    <div class="container">
+      <h1>Service Status</h1>
+      <p class="subtitle">Current status of Waxseal services</p>
+      <div id="overall" class="loading">Loading status...</div>
+      <div id="services" class="services"></div>
+      <div id="updated" class="updated"></div>
+    </div>
+  </main>
+  <footer>
+    <div class="container">
+      <p>Powered by <a href="https://upptime.js.org">Upptime</a> · <a href="https://github.com/gayansam/waxseal-status">Source</a></p>
+    </div>
+  </footer>
+  <script>
+    const OWNER = "gayansam";
+    const REPO = "waxseal-status";
+    const RAW = `https://raw.githubusercontent.com/${OWNER}/${REPO}/main`;
+    const SITES = [
+      { slug: "portal", name: "Portal" },
+      { slug: "api-health", name: "API Health" },
+      { slug: "smtp-inbound", name: "SMTP Inbound" },
+      { slug: "smtp-submission", name: "SMTP Submission" },
+      { slug: "imap", name: "IMAP" },
+    ];
+
+    async function fetchYaml(url) {
+      const res = await fetch(url);
+      const text = await res.text();
+      const obj = {};
+      text.split("\n").forEach(line => {
+        const idx = line.indexOf(": ");
+        if (idx > 0) obj[line.slice(0, idx).trim()] = line.slice(idx + 2).trim();
+      });
+      return obj;
+    }
+
+    async function fetchJson(url) {
+      const res = await fetch(url);
+      return res.json();
+    }
+
+    async function loadStatus() {
+      try {
+        const results = await Promise.all(
+          SITES.map(async site => {
+            const [history, uptime, responseTime] = await Promise.all([
+              fetchYaml(`${RAW}/history/${site.slug}.yml`),
+              fetchJson(`${RAW}/api/${site.slug}/uptime.json`).catch(() => null),
+              fetchJson(`${RAW}/api/${site.slug}/response-time.json`).catch(() => null),
+            ]);
+            return {
+              name: site.name,
+              status: history.status || "unknown",
+              responseTime: history.responseTime || "0",
+              uptime: uptime?.message || "N/A",
+              lastUpdated: history.lastUpdated || "",
+            };
+          })
+        );
+
+        const allUp = results.every(r => r.status === "up");
+        const anyDown = results.some(r => r.status === "down");
+        const overallStatus = anyDown ? "down" : allUp ? "up" : "degraded";
+        const overallText = anyDown ? "Some services are experiencing issues" : allUp ? "All systems operational" : "Some services are degraded";
+
+        document.getElementById("overall").className = `overall ${overallStatus}`;
+        document.getElementById("overall").innerHTML = `<span class="dot"></span>${overallText}`;
+
+        const servicesEl = document.getElementById("services");
+        servicesEl.innerHTML = results.map(r => `
+          <div class="service">
+            <div>
+              <div class="name">${r.name}</div>
+              <div class="meta">${r.responseTime}ms · ${r.uptime} uptime</div>
+            </div>
+            <span class="badge ${r.status}">${r.status === "up" ? "Operational" : r.status === "down" ? "Down" : "Degraded"}</span>
+          </div>
+        `).join("");
+
+        const latest = results.reduce((max, r) => r.lastUpdated > max ? r.lastUpdated : max, "");
+        if (latest) {
+          document.getElementById("updated").textContent = `Last checked: ${new Date(latest).toLocaleString()}`;
+        }
+      } catch (err) {
+        document.getElementById("overall").className = "overall down";
+        document.getElementById("overall").innerHTML = '<span class="dot"></span>Unable to load status';
+        console.error(err);
+      }
+    }
+
+    loadStatus();
+    setInterval(loadStatus, 60000);
+  </script>
+</body>
+</html>

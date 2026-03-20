@@ -1,0 +1,48 @@
+owner: gayansam
+repo: waxseal-status
+
+sites:
+  - name: Portal
+    url: https://waxseal.app
+    expectedStatusCodes:
+      - 200
+      - 301
+      - 302
+      - 307
+
+  - name: API Health
+    url: https://waxseal.app/api/healthz
+
+  - name: SMTP Inbound
+    url: mail.crowdnoetic.com
+    check: "tcp-ping"
+    port: 25
+
+  - name: SMTP Submission
+    url: mail.crowdnoetic.com
+    check: "tcp-ping"
+    port: 587
+
+  - name: IMAP
+    url: mail.crowdnoetic.com
+    check: "tcp-ping"
+    port: 993
+
+status-website:
+  cname: status.waxseal.app
+  logoUrl: https://waxseal.app/logo.svg
+  name: Waxseal Status
+  theme: light
+  navbar:
+    - title: Homepage
+      href: https://waxseal.app
+    - title: Help
+      href: https://waxseal.app/en/portal/help
+
+workflowSchedule:
+  graphs: "0 0 * * *"
+  responseTime: "0 23 * * *"
+  staticSite: "0 1 * * *"
+  summary: "0 0 * * *"
+  updateTemplate: "0 0 * * *"
+  updates: "*/5 * * * *"

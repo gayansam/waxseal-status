@@ -1,0 +1,15 @@
+name: Static Site CI
+on:
+  schedule:
+    - cron: "0 1 * * *"
+  workflow_dispatch:
+  repository_dispatch:
+
+jobs:
+  site:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: upptime/status-page@v1.4.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
